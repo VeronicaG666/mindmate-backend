@@ -79,6 +79,29 @@ def analyze():
     except Exception as e:
         print("Exception:", e)
         return jsonify({'error': str(e)}), 500
+    
+@app.route('/api/recommendations', methods=['POST'])
+def get_recommendations():
+    data = request.get_json()
+    mood = data.get("mood", "").lower()
+
+    RESOURCE_MAP = {
+        "positive": [
+            {"title": "Keep the momentum going", "url": "https://youtu.be/oTugjssqOT0"},
+            {"title": "Boost your productivity", "url": "https://jamesclear.com/atomic-habits"}
+        ],
+        "neutral": [
+            {"title": "Reset with mindfulness", "url": "https://www.youtube.com/watch?v=inpok4MKVLM"},
+            {"title": "Take a creative break", "url": "https://waitbutwhy.com/"}
+        ],
+        "negative": [
+            {"title": "You’re not alone — here’s help", "url": "https://www.youtube.com/watch?v=MIr3RsUWrdo"},
+            {"title": "Talk to someone now", "url": "https://www.betterhelp.com/get-started/"}
+        ]
+    }
+
+    resources = RESOURCE_MAP.get(mood, [])
+    return jsonify({"resources": resources})
 
 if __name__ == '__main__':
     with app.app_context():
