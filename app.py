@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 import requests
 import os
 from dotenv import load_dotenv
+from datetime import datetime
 
 # Load env vars
 load_dotenv()
@@ -102,6 +103,26 @@ def get_recommendations():
 
     resources = RESOURCE_MAP.get(mood, [])
     return jsonify({"resources": resources})
+
+
+@app.route('/api/journals', methods=['GET'])
+def get_journals():
+    # Get latest 7 journal entries
+    entries = JournalEntry.query.order_by(JournalEntry.id.desc()).limit(7).all()
+    entries.reverse()  # so chart shows oldest ➜ newest
+
+    data = [
+        {
+            "id": e.id,
+            "text": e.text,
+            "mood": e.mood,
+            "confidence": e.confidence,
+        }
+        for e in entries
+    ]
+
+    return jsonify(data)
+
 
 if __name__ == '__main__':
     with app.app_context():
