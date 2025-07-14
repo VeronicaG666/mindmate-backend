@@ -123,6 +123,34 @@ def get_journals():
 
     return jsonify(data)
 
+@app.route('/api/history', methods=['GET'])
+def get_full_history():
+    entries = JournalEntry.query.order_by(JournalEntry.id.desc()).all()
+    data = [
+        {
+            "id": e.id,
+            "text": e.text,
+            "mood": e.mood,
+            "confidence": e.confidence,
+            "timestamp": e.id  # Could use a real timestamp later
+        }
+        for e in entries
+    ]
+    return jsonify(data)
+
+@app.route('/api/journals/<int:entry_id>', methods=['PUT'])
+def update_journal(entry_id):
+    data = request.get_json()
+    new_text = data.get('text')
+
+    entry = JournalEntry.query.get(entry_id)
+    if not entry:
+        return jsonify({'error': 'Entry not found'}), 404
+
+    entry.text = new_text
+    db.session.commit()
+
+    return jsonify({'message': 'Entry updated successfully'})
 
 if __name__ == '__main__':
     with app.app_context():
