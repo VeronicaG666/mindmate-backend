@@ -80,7 +80,7 @@ def analyze():
     except Exception as e:
         print("Exception:", e)
         return jsonify({'error': str(e)}), 500
-    
+
 @app.route('/api/recommendations', methods=['POST'])
 def get_recommendations():
     data = request.get_json()
@@ -104,12 +104,10 @@ def get_recommendations():
     resources = RESOURCE_MAP.get(mood, [])
     return jsonify({"resources": resources})
 
-
 @app.route('/api/journals', methods=['GET'])
 def get_journals():
-    # Get latest 7 journal entries
     entries = JournalEntry.query.order_by(JournalEntry.id.desc()).limit(7).all()
-    entries.reverse()  # so chart shows oldest ➜ newest
+    entries.reverse()
 
     data = [
         {
@@ -123,20 +121,37 @@ def get_journals():
 
     return jsonify(data)
 
-@app.route('/api/history', methods=['GET'])
+@app.route('/api/history', methods=['POST'])
 def get_full_history():
-    entries = JournalEntry.query.order_by(JournalEntry.id.desc()).all()
-    data = [
+    data = request.get_json() or {}
+    session_start = data.get("sessionStart")
+
+    try:
+        # Convert to integer if valid, else default to 0
+        session_id_cutoff = int(session_start)
+    except (TypeError, ValueError):
+        session_id_cutoff = 0
+
+    # Fetch entries added after session started
+    entries = (
+        JournalEntry.query
+        .filter(JournalEntry.id > session_id_cutoff)
+        .order_by(JournalEntry.id.asc())
+        .all()
+    )
+
+    response_data = [
         {
             "id": e.id,
             "text": e.text,
             "mood": e.mood,
-            "confidence": e.confidence,
-            "timestamp": e.id  # Could use a real timestamp later
+            "confidence": e.confidence
         }
         for e in entries
     ]
-    return jsonify(data)
+
+    return jsonify(response_data)
+
 
 @app.route('/api/journals/<int:entry_id>', methods=['PUT'])
 def update_journal(entry_id):
@@ -157,4 +172,3 @@ if __name__ == '__main__':
         db.create_all()
         port = int(os.environ.get("PORT", 5000))
         app.run(host="0.0.0.0", port=port)
-
